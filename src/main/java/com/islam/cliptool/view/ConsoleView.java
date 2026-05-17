@@ -7,6 +7,7 @@ package com.islam.cliptool.view;
 import com.islam.cliptool.model.Subtitle;
 import com.islam.cliptool.table.SubtitleTableModel;
 import com.islam.cliptool.util.SrtParser;
+import com.islam.cliptool.util.SrtWriter;
 import uk.co.caprica.vlcj.player.component.EmbeddedMediaPlayerComponent;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -230,7 +231,10 @@ public class ConsoleView extends JFrame{
             videoComponent.mediaPlayer()
                 .media()
                 .play(selectedFile.getAbsolutePath());
-
+            
+            SwingUtilities.invokeLater(() -> {
+                loadSubtitlesIntoVlc();
+            });
             
         }
     });
@@ -490,11 +494,26 @@ public class ConsoleView extends JFrame{
             syncing = false;
         }
     }
-    
+    private void loadSubtitlesIntoVlc() {
+
+        try {
+
+            File srtFile = SrtWriter.writeTemp(model.getData());
+
+            videoComponent.mediaPlayer()
+                    .subpictures()
+                    .setSubTitleFile(srtFile.getAbsolutePath());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
     private void loadSubtitles(File file) {
         try {
             List<Subtitle> subtitles = SrtParser.parse(file);
             model.setData(subtitles);
+            loadSubtitlesIntoVlc();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
