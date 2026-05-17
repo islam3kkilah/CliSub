@@ -41,6 +41,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.DefaultTableCellRenderer;
 /**
  *
  * @author i3akk
@@ -60,15 +62,15 @@ public class ConsoleView extends JFrame{
     JLabel startTime = new JLabel("00:00:00");
     JLabel endTime = new JLabel("00:00:00");
     JMenuItem openVideoItem = new JMenuItem("Open Video");
-    String[] columns = {"#", "StarTime", "EndTime", "Subtitle"};
     boolean isSeeking = false;
     private boolean syncing = false;
     private int currentSubtitleRow = -1;
     SubtitleTableModel model = new SubtitleTableModel();
     JTable table = new JTable(model);
+    
+    
     JLabel volumeLabel = new JLabel();
     private volatile boolean userSeeking = false;
-    private boolean userScrollingTable = true;
     private boolean autoFollowSubtitle = true;
     public ConsoleView() {
         volumeLabel.setBackground(new Color(0, 0, 0, 0));
@@ -85,7 +87,6 @@ public class ConsoleView extends JFrame{
         table.getColumnModel().getColumn(0).setMinWidth(30);
         table.getColumnModel().getColumn(0).setMaxWidth(60);
         table.getColumnModel().getColumn(0).setPreferredWidth(50);
-        
         table.getColumnModel().getColumn(1).setMinWidth(55);
         table.getColumnModel().getColumn(1).setMaxWidth(90);
         table.getColumnModel().getColumn(1).setPreferredWidth(80);
@@ -93,7 +94,56 @@ public class ConsoleView extends JFrame{
         table.getColumnModel().getColumn(2).setMinWidth(55);
         table.getColumnModel().getColumn(2).setMaxWidth(90);
         table.getColumnModel().getColumn(2).setPreferredWidth(80);
+        
         JScrollPane JTableScroll = new JScrollPane(table);
+        
+        JTableHeader header = table.getTableHeader();
+        
+        header.setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public java.awt.Component getTableCellRendererComponent(
+                    JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+
+                JLabel label = new JLabel(value.toString());
+                label.setOpaque(true);
+                label.setBackground(new Color(193, 213, 232)); 
+                label.setForeground(Color.BLACK);
+                label.setHorizontalAlignment(JLabel.CENTER);
+                label.setBorder(BorderFactory.createMatteBorder(
+                    0, 0, 0, 1, Color.LIGHT_GRAY
+                ));
+
+                return label;
+            }
+        });
+        header.setBorder(BorderFactory.createRaisedBevelBorder());
+        header.setReorderingAllowed(false);
+        header.setResizingAllowed(true);
+        table.setShowVerticalLines(true);
+        table.setShowHorizontalLines(true);
+        table.setGridColor(Color.LIGHT_GRAY);
+        
+        table.getColumnModel().getColumn(0).setCellRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+        @Override
+        public java.awt.Component getTableCellRendererComponent(
+                JTable table, Object value, boolean isSelected,
+                boolean hasFocus, int row, int column) {
+
+            java.awt.Component c = super.getTableCellRendererComponent(
+                    table, value, isSelected, hasFocus, row, column);
+
+            if (!isSelected) {
+                c.setBackground(new Color(201, 235, 206)); // light green
+                c.setForeground(Color.BLACK);
+            } else {
+                c.setBackground(new Color(102, 205, 170)); // selected green-ish
+                c.setForeground(Color.BLACK);
+            }
+
+            return c;
+        }
+    });
         
         fileMenu.add(exitItem);
         menuBar.add(fileMenu);
@@ -103,7 +153,7 @@ public class ConsoleView extends JFrame{
         area.setBackground(new Color(40, 42, 54));
         area.setSelectionColor(new Color(255,255,255));
         area.setForeground(new Color(241, 250, 140));
-        area.setFont(new Font("Consolas", Font.PLAIN, 14));
+        area.setFont(new Font("Console", Font.BOLD, 14));
         bar.add(newButton);
         bar.add(openButton);
         bar.add(saveButton);
@@ -183,7 +233,7 @@ public class ConsoleView extends JFrame{
         BottomPanel.add(tb, BorderLayout.CENTER);
         
         JPanel topRightPanel = new JPanel(new BorderLayout());
-        topRightPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), "Assistant",TitledBorder.LEFT, TitledBorder.TOP, new Font("Arial", Font.PLAIN, 12), Color.BLACK));
+        topRightPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), "Reader",TitledBorder.LEFT, TitledBorder.TOP, new Font("Arial", Font.PLAIN, 12), Color.BLACK));
         topRightPanel.add(JTableScroll, BorderLayout.CENTER);
         
         JPanel wholeTopPanel = new JPanel(new BorderLayout());
@@ -411,7 +461,7 @@ public class ConsoleView extends JFrame{
                     c.setBackground(new Color(255, 230, 120));
                     c.setForeground(Color.BLACK);
                 } else if (isSelected) {
-                    c.setBackground(new Color(184, 207, 229));
+                    c.setBackground(Color.PINK);
                     c.setForeground(Color.BLACK);
                 } else {
                     c.setBackground(Color.WHITE);
