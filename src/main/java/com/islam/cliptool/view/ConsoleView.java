@@ -100,8 +100,9 @@ public class ConsoleView extends JFrame{
         menuBar.add(videoMenu);
         videoMenu.add(openVideoItem);
         area.setEditable(true);
-        area.setBackground(Color.BLACK);
-        area.setForeground(Color.GREEN);
+        area.setBackground(new Color(40, 42, 54));
+        area.setSelectionColor(new Color(255,255,255));
+        area.setForeground(new Color(241, 250, 140));
         area.setFont(new Font("Consolas", Font.PLAIN, 14));
         bar.add(newButton);
         bar.add(openButton);
@@ -155,7 +156,7 @@ public class ConsoleView extends JFrame{
         
         JPanel controlBar = new JPanel(new BorderLayout());
         controlBar.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLoweredBevelBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
-        controlBar.setBackground(new Color(210,187,116));
+        controlBar.setBackground(new Color(241, 250, 140));
         controlBar.setOpaque(true);
         controlBar.add(leftControls, BorderLayout.WEST);
         controlBar.add(centerControls, BorderLayout.CENTER);
