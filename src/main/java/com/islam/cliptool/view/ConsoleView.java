@@ -26,6 +26,7 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
+import javax.swing.DropMode;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -104,9 +105,13 @@ public class ConsoleView extends JFrame{
         volumeLabel.setFont(new Font("Arial", Font.BOLD, 14));
         volumeLabel.setOpaque(false); // no gray background
         volumeLabel.setVisible(false);
-        table.setDragEnabled(true);
-        table.setDropMode(javax.swing.DropMode.INSERT);
-        table.setDropTarget(new java.awt.dnd.DropTarget());
+        table.setDropMode(javax.swing.DropMode.ON);
+        table.setFillsViewportHeight(true);
+        table.setDropMode(DropMode.ON);
+        Color bg = new Color(238, 238, 238);
+        table.setBackground(bg);
+        table.setOpaque(true);
+        
         table.setBorder(javax.swing.BorderFactory.createLineBorder(java.awt.Color.GRAY));
         table.getTableHeader().setResizingAllowed(true);
         table.getTableHeader().setReorderingAllowed(false);
@@ -471,7 +476,6 @@ public class ConsoleView extends JFrame{
                 start();
             }};
         });
-        
         JScrollBar bar = JTableScroll.getVerticalScrollBar();
 
             bar.addAdjustmentListener(e -> {
@@ -507,41 +511,39 @@ public class ConsoleView extends JFrame{
             }
         });
         
-        
-        JTableScroll.setTransferHandler(new javax.swing.TransferHandler() {
+        table.setTransferHandler(new javax.swing.TransferHandler() {
 
-                @Override
-                public boolean canImport(TransferSupport support) {
-                    return support.isDataFlavorSupported(
-                            java.awt.datatransfer.DataFlavor.javaFileListFlavor
-                    );
-                }
+            @Override
+            public boolean canImport(TransferSupport support) {
+                return support.isDataFlavorSupported(
+                        java.awt.datatransfer.DataFlavor.javaFileListFlavor
+                );
+            }
 
-                @Override
-                public boolean importData(TransferSupport support) {
+            @Override
+            public boolean importData(TransferSupport support) {
+                try {
+                    List<File> files =
+                            (List<File>) support.getTransferable()
+                                    .getTransferData(
+                                            java.awt.datatransfer.DataFlavor.javaFileListFlavor
+                                    );
 
-                    try {
-                        java.util.List<File> files =
-                                (java.util.List<File>) support.getTransferable()
-                                        .getTransferData(
-                                                java.awt.datatransfer.DataFlavor.javaFileListFlavor
-                                        );
-
-                        for (File file : files) {
-                            if (file.getName().toLowerCase().endsWith(".srt")) {
-                                loadSubtitles(file);
-                            }
+                    for (File file : files) {
+                        if (file.getName().toLowerCase().endsWith(".srt")) {
+                            loadSubtitles(file);
                         }
-
-                        return true;
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
 
-                    return false;
+                    return true;
+
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            });
+                return false;
+            }
+        });
+        
         
         table.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
 
