@@ -14,10 +14,12 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.File;
+import java.io.InputStream;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -99,7 +101,7 @@ public class ConsoleView extends JFrame{
         
         JLabel emptyLabel = new JLabel(
             "<html><pre style='font-family:monospace;'>"
-            + loadAscii("/reader.txt")
+            + loadAscii("/ascii/reader.txt")
             + "</pre></html>"
         );
         JPanel tableLayer = new JPanel();
@@ -185,22 +187,35 @@ public class ConsoleView extends JFrame{
         area.setBackground(new Color(40, 42, 54));
         area.setSelectionColor(new Color(255,255,255));
         area.setForeground(new Color(241, 250, 140));
-        area.setFont(new Font("Console", Font.BOLD, 14));
+        try (InputStream is = getClass().getResourceAsStream("/fonts/KawkabMono-Regular.ttf")) {
+
+            Font customFont = Font.createFont(Font.TRUETYPE_FONT, is)
+                                  .deriveFont(14f);
+
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            ge.registerFont(customFont);
+
+            area.setFont(customFont);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
         bar.add(newButton);
         bar.add(openButton);
         bar.add(saveButton);
         JScrollPane scrollPane = new JScrollPane(area);
         tb.add(scrollPane, "Console");
         ImageIcon playIcon = new ImageIcon(
-            getClass().getResource("/icons8-play-16.png")
+            getClass().getResource("/icons/icons8-play-16.png")
         );
         
         ImageIcon pauseIcon = new ImageIcon(
-            getClass().getResource("/icons8-pause-16.png")
+            getClass().getResource("/icons/icons8-pause-16.png")
         );
         
         ImageIcon stopIcon = new ImageIcon(
-            getClass().getResource("/icons8-stop-16.png")
+            getClass().getResource("/icons/icons8-stop-16.png")
         );
         JButton playBtn = new JButton(playIcon);
         playBtn.setPreferredSize(new Dimension(23, 23));
