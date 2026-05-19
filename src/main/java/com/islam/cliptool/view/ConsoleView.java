@@ -8,6 +8,7 @@ import com.islam.cliptool.model.Subtitle;
 import com.islam.cliptool.table.SubtitleTableModel;
 import com.islam.cliptool.util.SrtParser;
 import com.islam.cliptool.util.SrtWriter;
+import javax.swing.JViewport;
 import uk.co.caprica.vlcj.player.component.EmbeddedMediaPlayerComponent;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -18,12 +19,16 @@ import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import javax.swing.AbstractAction;
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -39,6 +44,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.OverlayLayout;
 import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
@@ -58,13 +64,26 @@ public class ConsoleView extends JFrame{
     JButton newButton = new JButton("New");
     JButton openButton = new JButton("Open");
     JButton saveButton = new JButton("Save");
+
+    
     JMenuBar menuBar = new JMenuBar();
     JMenu fileMenu = new JMenu("File");
     JMenu videoMenu = new JMenu("Video");
+    JMenu themesMenu = new JMenu("Themes");
+    JMenu helpMenu = new JMenu("Help");
+    JMenu consoleThemeItem = new JMenu("Console Themes");
+    JMenu playerThemeItem = new JMenu("Player Themes");
+    
     JMenuItem exitItem = new JMenuItem("Exit");
+    JMenuItem openVideoItem = new JMenuItem("Open Video");
+    
+    JMenuItem helpItem = new JMenuItem("about");
+    JMenuItem nativeItem = new JMenuItem("Native Theme");
+    JMenuItem draculaItem = new JMenuItem("Dracula Theme");
+
     JLabel startTime = new JLabel("00:00:00");
     JLabel endTime = new JLabel("00:00:00");
-    JMenuItem openVideoItem = new JMenuItem("Open Video");
+    
     boolean isSeeking = false;
     private boolean syncing = false;
     private int currentSubtitleRow = -1;
@@ -75,6 +94,11 @@ public class ConsoleView extends JFrame{
     private volatile boolean userSeeking = false;
     private boolean autoFollowSubtitle = true;
     public ConsoleView() {
+        javax.swing.UIManager.put(
+            "Button.defaultButtonFollowsFocus",
+            Boolean.TRUE
+        );
+
         volumeLabel.setBackground(new Color(0, 0, 0, 0));
         volumeLabel.setForeground(Color.WHITE);
         volumeLabel.setFont(new Font("Arial", Font.BOLD, 14));
@@ -180,9 +204,18 @@ public class ConsoleView extends JFrame{
     });
         
         fileMenu.add(exitItem);
+        themesMenu.add(consoleThemeItem);
+        themesMenu.add(playerThemeItem);
+        consoleThemeItem.add(nativeItem);
+        consoleThemeItem.add(draculaItem);
+        
+        helpMenu.add(helpItem);
+        videoMenu.add(openVideoItem);
+        
         menuBar.add(fileMenu);
         menuBar.add(videoMenu);
-        videoMenu.add(openVideoItem);
+        menuBar.add(themesMenu);
+        menuBar.add(helpMenu);
         area.setEditable(true);
         area.setBackground(new Color(40, 42, 54));
         area.setSelectionColor(new Color(255,255,255));
@@ -204,6 +237,7 @@ public class ConsoleView extends JFrame{
         bar.add(newButton);
         bar.add(openButton);
         bar.add(saveButton);
+        
         JScrollPane scrollPane = new JScrollPane(area);
         tb.add(scrollPane, "Console");
         ImageIcon playIcon = new ImageIcon(
@@ -218,17 +252,36 @@ public class ConsoleView extends JFrame{
             getClass().getResource("/icons/icons8-stop-16.png")
         );
         JButton playBtn = new JButton(playIcon);
+        playBtn.setFocusable(false);
         playBtn.setPreferredSize(new Dimension(23, 23));
         playBtn.setMinimumSize(new Dimension(23, 23));
         playBtn.setMaximumSize(new Dimension(23, 23));
         JButton pauseBtn = new JButton(pauseIcon);
+        pauseBtn.setFocusable(false);
         pauseBtn.setPreferredSize(new Dimension(23, 23));
         pauseBtn.setMinimumSize(new Dimension(23, 23));
         pauseBtn.setMaximumSize(new Dimension(23, 23));
         JButton stopBtn = new JButton(stopIcon);
+        stopBtn.setFocusable(false);
         stopBtn.setPreferredSize(new Dimension(23, 23));
         stopBtn.setMinimumSize(new Dimension(23, 23));
         stopBtn.setMaximumSize(new Dimension(23, 23));
+        disableSpace(newButton);
+        disableSpace(openButton);
+        disableSpace(saveButton);
+
+        disableSpace(playBtn);
+        disableSpace(pauseBtn);
+        disableSpace(stopBtn);
+        
+        enableEnter(newButton);
+        enableEnter(openButton);
+        enableEnter(saveButton);
+        enableEnter(playBtn);
+        
+        enableEnter(pauseBtn);
+        enableEnter(stopBtn);
+        
         JSlider seekBar = new JSlider(0, 1000, 0);
         seekBar.setFocusable(false);
         seekBar.setBorder(null);
@@ -519,6 +572,22 @@ public class ConsoleView extends JFrame{
             }
         });
         
+        KeyStroke spaceKey = KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0);
+
+        videoComponent.getInputMap(JComponent.WHEN_FOCUSED).put(spaceKey, "togglePlayPause");
+
+        videoComponent.getActionMap().put("togglePlayPause", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+
+                if (videoComponent.mediaPlayer().status().isPlaying()) {
+                    videoComponent.mediaPlayer().controls().pause();
+                } else {
+                    videoComponent.mediaPlayer().controls().play();
+                }
+            }
+        });
+        
         videoLayer.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -544,6 +613,65 @@ public class ConsoleView extends JFrame{
             }
         });
         
+        
+        table.getInputMap(JTable.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            .put(
+                javax.swing.KeyStroke.getKeyStroke(
+                    java.awt.event.KeyEvent.VK_F,
+                    java.awt.event.InputEvent.CTRL_DOWN_MASK
+                ),
+                "jumpToCurrentSubtitle"
+            );
+    
+        
+        table.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+         .put(
+             javax.swing.KeyStroke.getKeyStroke(
+                     java.awt.event.KeyEvent.VK_F,
+                     java.awt.event.InputEvent.CTRL_DOWN_MASK
+             ),
+             "jumpToCurrentSubtitle"
+         );
+
+        table.getActionMap().put(
+            "jumpToCurrentSubtitle",
+            new javax.swing.AbstractAction() {
+
+                @Override
+                public void actionPerformed(java.awt.event.ActionEvent e) {
+
+                    if (currentSubtitleRow >= 0
+                            && currentSubtitleRow < table.getRowCount()) {
+
+                        // Select highlighted row
+                        table.setRowSelectionInterval(
+                                currentSubtitleRow,
+                                currentSubtitleRow
+                        );
+
+                        // Get row rectangle
+                        java.awt.Rectangle rect =
+                                table.getCellRect(
+                                        currentSubtitleRow,
+                                        0,
+                                        true
+                                );
+
+                        // Get viewport
+                        JViewport viewport =
+                                (JViewport) table.getParent();
+
+                        // Move row to TOP
+                        viewport.setViewPosition(
+                                new java.awt.Point(0, rect.y)
+                        );
+
+                        table.requestFocusInWindow();
+                    }
+                }
+            }
+        );
+        
         setJMenuBar(menuBar);
         setSize(950,600);
         setTitle("CliSub");
@@ -551,6 +679,18 @@ public class ConsoleView extends JFrame{
         setLocationRelativeTo(null);
         
         
+    }
+    
+    private void enableEnter(AbstractButton b) {
+        b.getInputMap(JComponent.WHEN_FOCUSED)
+         .put(KeyStroke.getKeyStroke("ENTER"), "click");
+
+        b.getActionMap().put("click", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                b.doClick();
+            }
+        });
     }
     
     private void syncSubtitle(long currentTime) {
@@ -616,6 +756,15 @@ public class ConsoleView extends JFrame{
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    private void disableSpace(AbstractButton b) {
+
+        b.getInputMap(JComponent.WHEN_FOCUSED)
+         .put(KeyStroke.getKeyStroke("SPACE"), "none");
+
+        b.getInputMap(JComponent.WHEN_FOCUSED)
+         .put(KeyStroke.getKeyStroke("released SPACE"), "none");
     }
     
     private String loadAscii(String path) {
