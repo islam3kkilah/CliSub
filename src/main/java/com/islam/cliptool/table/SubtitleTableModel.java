@@ -28,7 +28,7 @@ public class SubtitleTableModel extends AbstractTableModel{
     
     @Override
     public int getRowCount() {
-        return Math.max(1, data.size());
+        return data.size();
     }
 
     @Override
@@ -43,15 +43,7 @@ public class SubtitleTableModel extends AbstractTableModel{
 
     @Override
     public Object getValueAt(int row, int col) {
-         if (data.isEmpty()) {
-            return switch (col) {
-                case 0 -> "1";
-                case 1 -> "00:00:00,000";
-                case 2 -> "00:00:05,000";
-                case 3 -> "Drag & Drop an SRT File, or Begin Translating";
-                default -> "";
-            };
-        }
+         
         Subtitle s = data.get(row);
 
         return switch (col) {
@@ -61,6 +53,7 @@ public class SubtitleTableModel extends AbstractTableModel{
             case 3 -> s.getText();
             default -> "";
         };
+        
     }
 
     private String format(long ms) {

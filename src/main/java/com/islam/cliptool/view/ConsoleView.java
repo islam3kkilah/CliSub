@@ -37,6 +37,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
+import javax.swing.OverlayLayout;
 import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
@@ -67,8 +68,7 @@ public class ConsoleView extends JFrame{
     private int currentSubtitleRow = -1;
     SubtitleTableModel model = new SubtitleTableModel();
     JTable table = new JTable(model);
-    
-    
+    JPanel emptyPanel = new JPanel(new BorderLayout());
     JLabel volumeLabel = new JLabel();
     private volatile boolean userSeeking = false;
     private boolean autoFollowSubtitle = true;
@@ -97,7 +97,39 @@ public class ConsoleView extends JFrame{
         
         JScrollPane JTableScroll = new JScrollPane(table);
         
+        JLabel emptyLabel = new JLabel(
+            "<html><pre style='font-family:monospace;'>"
+            + loadAscii("/reader.txt")
+            + "</pre></html>"
+        );
+        JPanel tableLayer = new JPanel();
+        tableLayer.setLayout(new OverlayLayout(tableLayer));
+
+        JTableScroll.setOpaque(true);
+        emptyPanel.setOpaque(false);
+        emptyPanel.setAlignmentX(0.5f);
+        emptyPanel.setAlignmentY(0.5f);
+
+        JTableScroll.setAlignmentX(0.5f);
+        JTableScroll.setAlignmentY(0.5f);
+
+        tableLayer.add(emptyPanel);
+        tableLayer.add(JTableScroll);
+
+        emptyLabel.setHorizontalAlignment(JLabel.CENTER);
+        emptyLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        emptyLabel.setForeground(Color.GRAY);
+
+        emptyPanel.add(emptyLabel);
+        
         JTableHeader header = table.getTableHeader();
+        
+        table.getTableHeader().setPreferredSize(
+            new Dimension(
+                table.getTableHeader().getPreferredSize().width,
+                25 // height
+            )
+        );
         
         header.setDefaultRenderer(new DefaultTableCellRenderer() {
             @Override
@@ -234,7 +266,7 @@ public class ConsoleView extends JFrame{
         
         JPanel topRightPanel = new JPanel(new BorderLayout());
         topRightPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), "Reader",TitledBorder.LEFT, TitledBorder.TOP, new Font("Arial", Font.PLAIN, 12), Color.BLACK));
-        topRightPanel.add(JTableScroll, BorderLayout.CENTER);
+        topRightPanel.add(tableLayer, BorderLayout.CENTER);
         
         JPanel wholeTopPanel = new JPanel(new BorderLayout());
         wholeTopPanel.add(topLeftPanel, BorderLayout.WEST);
@@ -496,7 +528,7 @@ public class ConsoleView extends JFrame{
                 videoLayer.repaint();
             }
         });
-
+        
         setJMenuBar(menuBar);
         setSize(950,600);
         setTitle("CliSub");
@@ -563,10 +595,24 @@ public class ConsoleView extends JFrame{
         try {
             List<Subtitle> subtitles = SrtParser.parse(file);
             model.setData(subtitles);
+            emptyPanel.setVisible(false);
             loadSubtitlesIntoVlc();
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+    
+    private String loadAscii(String path) {
+        try (java.io.InputStream is = getClass().getResourceAsStream(path);
+             java.util.Scanner sc = new java.util.Scanner(is)) {
+
+            sc.useDelimiter("\\A");
+            return sc.hasNext() ? sc.next() : "";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ASCII not found";
         }
     }
     
