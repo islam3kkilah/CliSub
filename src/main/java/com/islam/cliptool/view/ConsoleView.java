@@ -26,6 +26,7 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -38,49 +39,57 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 import javax.swing.OverlayLayout;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.DefaultTableCellRenderer;
+
 /**
  *
  * @author i3akk
  */
 public class ConsoleView extends JFrame{
+    private long segmentEndTime = -1;
     EmbeddedMediaPlayerComponent videoComponent = new EmbeddedMediaPlayerComponent();
-    JTextArea area = new JTextArea();;
+    JTextPane area = new JTextPane();
     JTabbedPane tb = new JTabbedPane();;
     JToolBar bar = new JToolBar();;
     JButton newButton = new JButton("New");
     JButton openButton = new JButton("Open");
     JButton saveButton = new JButton("Save");
 
+    private Font kawkabFont;
+    private Font consolasFont;
     
     JMenuBar menuBar = new JMenuBar();
     JMenu fileMenu = new JMenu("File");
     JMenu videoMenu = new JMenu("Video");
-    JMenu themesMenu = new JMenu("Themes");
+    JMenu themesMenu = new JMenu("Styling");
     JMenu helpMenu = new JMenu("Help");
-    JMenu consoleThemeItem = new JMenu("Console Themes");
-    JMenu playerThemeItem = new JMenu("Player Themes");
+    JMenu consoleThemeItem = new JMenu("Default Themes");
+    
+    JRadioButtonMenuItem consolasItem = new JRadioButtonMenuItem("Consolas");
+    JRadioButtonMenuItem kawkabItem = new JRadioButtonMenuItem("Kawkab");
     
     JMenuItem exitItem = new JMenuItem("Exit");
     JMenuItem openVideoItem = new JMenuItem("Open Video");
     
     JMenuItem helpItem = new JMenuItem("about");
-    JMenuItem nativeItem = new JMenuItem("Native Theme");
-    JMenuItem draculaItem = new JMenuItem("Dracula Theme");
+    JRadioButtonMenuItem  draculaItem = new JRadioButtonMenuItem("Dracula Theme");
+    JRadioButtonMenuItem GreenItem = new JRadioButtonMenuItem("Green Theme");
 
     JLabel startTime = new JLabel("00:00:00");
     JLabel endTime = new JLabel("00:00:00");
@@ -210,9 +219,20 @@ public class ConsoleView extends JFrame{
         
         fileMenu.add(exitItem);
         themesMenu.add(consoleThemeItem);
-        themesMenu.add(playerThemeItem);
-        consoleThemeItem.add(nativeItem);
+        
+        
+        ButtonGroup fontsGroup = new ButtonGroup();
+        fontsGroup.add(kawkabItem);
+        fontsGroup.add(consolasItem);
+        kawkabItem.setSelected(true);
+        
+        
+        ButtonGroup themeGroup = new ButtonGroup();
+        themeGroup.add(GreenItem);
+        themeGroup.add(draculaItem);
+        GreenItem.setSelected(true);
         consoleThemeItem.add(draculaItem);
+        consoleThemeItem.add(GreenItem);
         
         helpMenu.add(helpItem);
         videoMenu.add(openVideoItem);
@@ -221,23 +241,13 @@ public class ConsoleView extends JFrame{
         menuBar.add(videoMenu);
         menuBar.add(themesMenu);
         menuBar.add(helpMenu);
-        area.setEditable(true);
-        area.setBackground(new Color(40, 42, 54));
-        area.setSelectionColor(new Color(255,255,255));
-        area.setForeground(new Color(241, 250, 140));
-        try (InputStream is = getClass().getResourceAsStream("/fonts/KawkabMono-Regular.ttf")) {
+        
 
-            Font customFont = Font.createFont(Font.TRUETYPE_FONT, is)
-                                  .deriveFont(14f);
-
-            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            ge.registerFont(customFont);
-
-            area.setFont(customFont);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        
+        kawkabFont = loadFont("/fonts/KawkabMono-Regular.ttf", 14f);
+        consolasFont = loadFont("/fonts/Consolas-Regular.ttf", 14f);
+        
+        
         
         bar.add(newButton);
         bar.add(openButton);
@@ -325,9 +335,7 @@ public class ConsoleView extends JFrame{
 
         videoComponent.setBounds(0, 0, 800, 500);
         volumeLabel.setBounds(10, 10, 80, 20);
-
-        
-        
+       
         JPanel topLeftPanel = new JPanel(new BorderLayout());
         topLeftPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.GRAY), "Player",TitledBorder.LEFT, TitledBorder.TOP, new Font("Arial", Font.PLAIN, 12), Color.BLACK));
         topLeftPanel.add(videoLayer, BorderLayout.CENTER);
@@ -452,6 +460,10 @@ public class ConsoleView extends JFrame{
                         startTime.setText(formatTime(newTime));
                         endTime.setText(formatTime(total));
                         syncSubtitle(newTime);
+                        if (segmentEndTime > 0 && newTime >= segmentEndTime) {
+                            mediaPlayer.controls().pause(); // or stop()
+                            segmentEndTime = -1; // reset
+                        }
 
                     });
                 }
@@ -483,33 +495,22 @@ public class ConsoleView extends JFrame{
         });    
         
         table.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mousePressed(java.awt.event.MouseEvent e) {
+        @Override
+        public void mousePressed(java.awt.event.MouseEvent e) {
 
-                int row = table.rowAtPoint(e.getPoint());
+            int row = table.rowAtPoint(e.getPoint());
+            if (row < 0) return;
 
-                if (row < 0) return;
+            table.setRowSelectionInterval(row, row);
 
-                table.setRowSelectionInterval(row, row); // force selection immediately
+            Subtitle s = model.getData().get(row);
 
-                Subtitle s = model.getData().get(row);
+            segmentEndTime = s.getEndTime();
 
-                userSeeking = true;
-
-                videoComponent.mediaPlayer()
-                        .controls()
-                        .setTime(s.getStartTime());
-
-                videoComponent.mediaPlayer()
-                        .controls()
-                        .play();
-
-                new javax.swing.Timer(400, ev -> userSeeking = false) {{
-                    setRepeats(false);
-                    start();
-                }};
-            }
-        });
+            videoComponent.mediaPlayer().controls().setTime(s.getStartTime());
+            videoComponent.mediaPlayer().controls().play();
+        }
+    });
         
         table.setTransferHandler(new javax.swing.TransferHandler() {
 
@@ -543,6 +544,16 @@ public class ConsoleView extends JFrame{
                 return false;
             }
         });
+        
+        GreenItem.addActionListener(e -> {
+            applyGreenTheme();
+        });
+
+        draculaItem.addActionListener(e -> {
+            applyDraculaTheme();
+
+        });
+        
         
         
         table.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
@@ -674,6 +685,8 @@ public class ConsoleView extends JFrame{
             }
         );
         
+        applyDraculaTheme();
+        draculaItem.setSelected(true);
         setJMenuBar(menuBar);
         setSize(950,600);
         setTitle("CliSub");
@@ -681,6 +694,28 @@ public class ConsoleView extends JFrame{
         setLocationRelativeTo(null);
         
         
+    }
+    
+    
+    
+   
+    
+    private Font loadFont(String path, float size) {
+        try (InputStream is = getClass().getResourceAsStream(path)) {
+
+            Font font = Font.createFont(Font.TRUETYPE_FONT, is)
+                    .deriveFont(size);
+
+            GraphicsEnvironment
+                    .getLocalGraphicsEnvironment()
+                    .registerFont(font);
+
+            return font;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Font("Monospaced", Font.PLAIN, (int) size);
+        }
     }
     
     private void enableEnter(AbstractButton b) {
@@ -694,6 +729,7 @@ public class ConsoleView extends JFrame{
             }
         });
     }
+    
     
     private void syncSubtitle(long currentTime) {
 
@@ -760,6 +796,55 @@ public class ConsoleView extends JFrame{
         }
     }
     
+    private void applyTextPaneTheme(Color bg,Color fg,Color caret,Color selectionBg,Color selectionFg,Font font) {
+
+        area.setBackground(bg);
+
+        area.setForeground(fg);
+
+        area.setCaretColor(caret);
+
+        area.setSelectionColor(selectionBg);
+
+        area.setSelectedTextColor(selectionFg);
+
+        area.setFont(font);
+
+        // CHANGE OLD TEXT
+        javax.swing.text.StyledDocument doc =
+                area.getStyledDocument();
+
+        javax.swing.text.SimpleAttributeSet attrs =
+                new javax.swing.text.SimpleAttributeSet();
+
+        javax.swing.text.StyleConstants
+                .setForeground(attrs, fg);
+
+        javax.swing.text.StyleConstants
+                .setFontFamily(attrs, font.getFamily());
+
+        javax.swing.text.StyleConstants
+                .setFontSize(attrs, font.getSize());
+
+        doc.setCharacterAttributes(
+                0,
+                doc.getLength(),
+                attrs,
+                true
+        );
+
+        // CHANGE FUTURE TEXT
+        area.setCharacterAttributes(attrs, true);
+    }
+    
+    private void applyGreenTheme() {
+        applyTextPaneTheme(Color.BLACK,Color.GREEN,Color.WHITE,UIManager.getColor("TextPane.selectionBackground"),UIManager.getColor("TextPane.selectionForeground"),consolasFont);
+    }
+    
+    private void applyDraculaTheme() {
+        applyTextPaneTheme(new Color(40, 42, 54),new Color(241, 250, 140), Color.WHITE, new Color(98, 114, 164),Color.WHITE,consolasFont);
+    }
+    
     private void disableSpace(AbstractButton b) {
 
         b.getInputMap(JComponent.WHEN_FOCUSED)
@@ -781,6 +866,8 @@ public class ConsoleView extends JFrame{
             return "ASCII not found";
         }
     }
+    
+    
     
     private String formatTime(long millis) {
 
