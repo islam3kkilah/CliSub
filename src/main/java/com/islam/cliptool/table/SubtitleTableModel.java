@@ -50,12 +50,24 @@ public class SubtitleTableModel extends AbstractTableModel{
             case 0 -> s.getIndex();
             case 1 -> format(s.getStartTime());
             case 2 -> format(s.getEndTime());
-            case 3 -> s.getText();
+            case 3 -> toColoredEscapes(s.getText());
             default -> "";
         };
         
     }
+    
+    private String toColoredEscapes(String text) {
+        if (text == null) return "";
 
+        String escaped = text
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\n", "<span style='color:red;font-weight:bold;'>\\n</span>");
+
+        return "<html><body style='font-family:monospace;'>" + escaped + "</body></html>";
+    }
+    
     private String format(long ms) {
 
         long h = ms / 3600000;

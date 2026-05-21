@@ -244,7 +244,7 @@ public class ConsoleView extends JFrame{
         
 
         
-        kawkabFont = loadFont("/fonts/KawkabMono-Regular.ttf", 14f);
+        kawkabFont = loadFont("/fonts/KawkabMono-Regular.ttf", 13f);
         consolasFont = loadFont("/fonts/Consolas-Regular.ttf", 14f);
         
         
@@ -746,7 +746,9 @@ public class ConsoleView extends JFrame{
 
                 if (currentTime >= s.getStartTime()
                     && currentTime <= s.getEndTime()) {
-
+                if (i == currentSubtitleRow) {
+                    return;
+                }
                 currentSubtitleRow = i;
                 final int row = i;
 
@@ -838,11 +840,11 @@ public class ConsoleView extends JFrame{
     }
     
     private void applyGreenTheme() {
-        applyTextPaneTheme(Color.BLACK,Color.GREEN,Color.WHITE,UIManager.getColor("TextPane.selectionBackground"),UIManager.getColor("TextPane.selectionForeground"),consolasFont);
+        applyTextPaneTheme(Color.BLACK,Color.GREEN,Color.WHITE,UIManager.getColor("TextPane.selectionBackground"),UIManager.getColor("TextPane.selectionForeground"),kawkabFont);
     }
     
     private void applyDraculaTheme() {
-        applyTextPaneTheme(new Color(40, 42, 54),new Color(241, 250, 140), Color.WHITE, new Color(98, 114, 164),Color.WHITE,consolasFont);
+        applyTextPaneTheme(new Color(40, 42, 54),new Color(241, 250, 140), Color.WHITE, new Color(98, 114, 164),Color.WHITE,kawkabFont);
     }
     
     private void disableSpace(AbstractButton b) {
